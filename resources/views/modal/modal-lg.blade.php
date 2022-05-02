@@ -5,8 +5,9 @@
                 <h5 class="modal-title"></h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form action="">
+            <form method="POST" id="storeForm" enctype="multipart/form-data">
                 @csrf
+                <input type="hidden" name="update_id" id="update_id">
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-12">

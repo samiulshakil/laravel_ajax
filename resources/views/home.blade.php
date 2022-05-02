@@ -7,7 +7,7 @@
         font-size: initial;
     }
     .required label:first-child::after{
-        content: '*';
+        content: ' *';
         color: red;
         font-weight: bold;
     }
@@ -108,6 +108,42 @@
         }
 
     });
+
+    //form data store of users
+    $(document).on('click', '#saveBtn', function () {
+        let storeForm = document.getElementById('storeForm');
+        let formData = new FormData(storeForm);
+        let url = "{{route('users.store')}}";
+
+        store_form_data(formData, url);
+    });
+
+    function store_form_data(formData, url) {
+        $.ajax({
+            url: url,
+            type: "POST",
+            data: formData,
+            dataType: "JSON",
+            contentType: false,
+            processData: false,
+            cache: false,
+            success: function (data) {
+                $('#storeForm').find('.is-invalid').removeClass('is-invalid');
+                if(data.status == false){
+                    $.each(data.errors, function (key, value) {
+                        $('#storeForm #' + key).addClass('is-invalid');
+                    });
+                }else{
+                    $("#myModal").modal('hide');
+                    $('#storeForm')[0].reset();
+                }
+
+            },
+            error: function (xhr, ajaxOption, thrownError) {
+                console.log(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+            }
+        });
+    }
 
 });
 
