@@ -1,5 +1,6 @@
 @extends('layouts.app')
 @push('css')
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
 <link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/css/dropify.min.css" rel="stylesheet" />
 <style>
@@ -10,6 +11,9 @@
         content: ' *';
         color: red;
         font-weight: bold;
+    }
+    .error {
+        color: red;
     }
 </style>
 @endpush
@@ -64,8 +68,10 @@
 @endsection
 @push('js')
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/js/dropify.min.js"></script>
+{!! Toastr::message() !!}
 <script>
     $(document).ready(function() {
         $('.js-example-basic-single').select2();
@@ -85,8 +91,8 @@
             $('#myModal #saveBtn').text('save');
             $('#myModal .modal-title').text('Add New User');
 
+    //get upazila by dependenci select box
         $(document).on('change','#district_id', function(event) {
-         //get upazila by dependenci select box
         let district_id = $('#district_id').val();
         if (district_id) {
             $.ajax({
@@ -129,11 +135,15 @@
             cache: false,
             success: function (data) {
                 $('#storeForm').find('.is-invalid').removeClass('is-invalid');
+                $('#storeForm').find('.error').remove();
                 if(data.status == false){
                     $.each(data.errors, function (key, value) {
                         $('#storeForm #' + key).addClass('is-invalid');
+                        $('#storeForm #' + key).parent().append(
+                            '<div class="error d-block">' + value + '</div>');
                     });
                 }else{
+                    flashMessage(data.status, data.message);
                     $("#myModal").modal('hide');
                     $('#storeForm')[0].reset();
                 }
@@ -146,6 +156,42 @@
     }
 
 });
+
+    //toaster notification 
+    function flashMessage(status, message) {
+        toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": true,
+        "progressBar": true,
+        "positionClass": "toast-top-right",
+        "preventDuplicates": false,
+        "onclick": null,
+        "showDuration": "300",
+        "hideDuration": "1000",
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    }
+
+        switch (status) {
+            case 'success':
+                toastr.success(message, 'SUCCESS');
+                break;
+            case 'error':
+                toastr.error(message, 'ERROR');
+                break;
+            case 'info':
+                toastr.info(message, 'INFORMARTION');
+                break;
+            case 'warning':
+                toastr.warning(message, 'WARNING');
+                break;
+        }
+    }
 
 
     });

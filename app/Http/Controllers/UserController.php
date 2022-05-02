@@ -56,10 +56,10 @@ class UserController extends Controller
             $output = ['status' => 'error', 'message' => 'Data cannot save'];
         }
         return response()->json($output);
-    }
+    } 
 
     /**
-     * Display the specified resource.
+     * Display the specified resource...
      *
      * @param  int  $id
      * @return \Illuminate\Http\Response
