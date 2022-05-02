@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Http\Requests\UserFormRequest;
 use App\Models\User;
+use App\Traits\Uploadable;
 use Illuminate\Support\Facades\Hash;
 
 
 class UserController extends Controller
 {
+    use Uploadable;
     /**
      * Display a listing of the resource.
      *
@@ -49,6 +51,12 @@ class UserController extends Controller
             'address' => $request->address,
             'status' => 0,
         ]);
+
+        if($request->hasFile('avatar')){
+            $avatar = $this->upload_file($request->file('avatar'), 'user_image');
+            $result->avatar = $avatar;
+            $result->save();
+        }
 
         if ($result) {
             $output = ['status' => 'success', 'message' => 'Data has been saved successfully'];
