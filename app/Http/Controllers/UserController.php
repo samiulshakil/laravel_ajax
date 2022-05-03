@@ -2,52 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Http\Requests\UserFormRequest;
 use App\Models\User;
 use App\Traits\Uploadable;
-use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
     use Uploadable;
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function index()
-    {
-        //
-    }
 
-    /**
-     * Show the form for creating a new resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function store(UserFormRequest $request)
     {
         $result = User::Create([
             'role_id' => $request->role_id,
             'name' => $request->name,
             'email' => $request->email,
-            'avatar' => 'default.png',
             'district_id' => $request->district_id,
             'upazila_id' => $request->upazila_id,
-            'password' => Hash::make($request->password),
+            'password' => $request->password,
             'address' => $request->address,
             'status' => 0,
         ]);
@@ -66,48 +38,67 @@ class UserController extends Controller
         return response()->json($output);
     } 
 
-    /**
-     * Display the specified resource...
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        //
+    public function userList(Request $request){
+        if ($request->ajax()) {
+            $user =  new User();
+
+            $user->setOrderValue($request->input('order.0.column'));
+            $user->setDirValue($request->input('order.0.dir'));
+            $user->setLengthValue($request->input('length'));
+            $user->setStartValue($request->input('start'));
+
+            $list = $user->getList();
+
+            $data = [];
+            $no = $request->input('start');
+            foreach ($list as $value) {
+                $no++;
+                $action = '';
+                $action .= ' <a class="dropdown-item edit_data" data-id="' . $value->id . '"><i class="fas fa-edit text-primary"></i> Edit</a>';
+                $action .= ' <a class="dropdown-item view_data"  data-id="' . $value->id . '"><i class="fas fa-eye text-warning"></i> View</a>';
+                $action .= ' <a class="dropdown-item delete_data"  data-id="' . $value->id . '" data-name="' . $value->name . '"><i class="fas fa-trash text-danger"></i> Delete</a>';
+
+                $btngroup = '<div class="dropdown">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-th-list"></i>
+                </button>
+                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                ' . $action . '
+                </ul>
+              </div>';
+
+                $row = [];
+                $row[] = '<div class="custom-control custom-checkbox">
+                <input type="checkbox" value="'.$value->id.'"
+                class="custom-control-input select_data" onchange="select_single_item('.$value->id.')" id="checkbox'.$value->id.'">
+                <label class="custom-control-label" for="checkbox'.$value->id.'"></label>
+              </div>';
+                $row[] = $no;
+                $row[] = $this->avatar($value->avatar, $value->name);
+                $row[] = $value->name;
+                $row[] = $value->role->role_name;
+                $row[] = $value->email;
+                $row[] = $value->district->location_name;
+                $row[] = $value->upazila->location_name;
+                $row[] = $value->email_verified_at ? '<span class="badge bg-success">Verified</span>' : '<span class="badge bg-danger">Unverified</span>';
+                $row[] = $value->status == 1 ?'<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Inactive</span>';;
+                $row[] = $btngroup;
+                $data[] = $row;
+            }
+            $output = array(
+                "draw" => $request->input('draw'),
+                "recordsTotal" => $user->count_all(),
+                "recordsFiltered" => $user->count_filtered(),
+                "data" => $data,
+            );
+
+            echo json_encode($output);
+        }
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function edit($id)
+    private function avatar($avatar = null, $name = null,)
     {
-        //
+        return !empty($avatar) ? '<img src="' . asset("storage/" . 'user_image/' . $avatar) . '" alt="' . $name . '" style="width:60px;"/>' : '<img style="width:60px;" src="' . asset("svg/user.svg") . '" alt="User Avatar"/>';
     }
 
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function destroy($id)
-    {
-        //
-    }
 }

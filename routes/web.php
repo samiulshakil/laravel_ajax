@@ -27,4 +27,11 @@ Route::post('upazila-list', [HomeController::class, 'upazilaList'])->name('upazi
 
 Route::resource('users', UserController::class);
 
+Route::prefix('user')->group(function () {
+    Route::name('user.')->group(function () {
+        Route::post('store', [UserController::class, 'store'])->name('store');
+        Route::post('list', [UserController::class, 'userList'])->name('list');
+    });
+});
+
 
