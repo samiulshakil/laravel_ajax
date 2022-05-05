@@ -17,7 +17,6 @@
     }
 
     .dataTables_length {
-    padding-top: 1rem;
     padding-left: 1rem;
     }
     .dataTables_filter {
@@ -44,7 +43,7 @@
                     </div>
                 <div class="col-md-6">
                     <!-- Click to show Modal -->
-                    <button class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#myModal">New User</button>
+                    <button onclick="showModal('Add New User','Save')" class="btn btn-primary float-end" data-bs-toggle="modal" data-bs-target="#myModal">New User</button>
                 </div>
             </div>
         </div>
@@ -92,7 +91,9 @@
 <script>
     let table;
     $(document).ready( function () {
-        $('#dataTable').DataTable({
+        $('.dropify').dropify();
+
+    table = $('#dataTable').DataTable({
             "processing": true, //Feature control the processing indicator
             "serverSide": true, //Feature control DataTable server side processing mode
             "order": [], //Initial no order
@@ -120,63 +121,34 @@
         });
     });
 
-    $(document).ready(function() {
 
-        $('.dropify').dropify();
-
-        $("#myModal").on("show.bs.modal", function(event) {
-
-            $('#storeForm')[0].reset();
-            $('#storeForm').find('.is-invalid').removeClass('is-invalid');
-            $('#storeForm').find('.error').remove();
-            $('.dropify-clear').trigger('click');
-
-            // Get the button that triggered the modal
-            var button = $(event.relatedTarget);
-
-            // Extract value from the custom data-* attribute
-            var titleData = button.data("title");
-
-            // Change modal title
-            $(this).find(".modal-title").text(titleData);
-
-            $('#myModal #saveBtn').text('save');
-            $('#myModal .modal-title').text('Add New User');
-
-            //get upazila by dependenci select box
-            $(document).on('change','#district_id', function(event) {
-            let district_id = $('#district_id').val();
-            if (district_id) {
-                $.ajax({
-                    url: "{{route('upazila.list')}}",
-                    type: "POST",
-                    data: {
-                        district_id: district_id,
-                        _token: _token
-                    },
-                    dataType: "JSON",
-                    success: function (data) {
-                        $('#upazila_id').html('');
-                        $('#upazila_id').html(data);
-                    },
-                    error: function (xhr, ajaxOption, thrownError) {
-                        console.log(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
-                    }
-                });
-            }
-
-        });
+    function showModal(title, btnText) {
+        $('#storeForm')[0].reset();
+        $('#storeForm').find('.is-invalid').removeClass('is-invalid');
+        $('#storeForm').find('.error').remove();
+        $('#password, #password_confirmation').parent().removeClass('d-none');
+        $('.dropify-clear').trigger('click');
+        $('#myModal .modal-title').text(title);
+        $('#myModal #saveBtn').text(btnText);
+    }
 
         //form data store of users
         $(document).on('click', '#saveBtn', function () {
             let storeForm = document.getElementById('storeForm');
             let formData = new FormData(storeForm);
-            let url = "{{route('users.store')}}";
+            let url = "{{route('user.store')}}";
+            let id = $('#update_id').val();
+            let method;
+            if (id) {
+                method = 'update';
+            } else {
+                method = 'add';
+            }
 
-            store_form_data(formData, url);
+            store_form_data(table, method, url, formData);
         });
 
-        function store_form_data(formData, url) {
+        function store_form_data(table, method, url, formData) {
             $.ajax({
                 url: url,
                 type: "POST",
@@ -196,7 +168,14 @@
                         });
                     }else{
                         flashMessage(data.status, data.message);
-                        $("#myModal").modal('hide');
+                        if (data.status == 'success') {
+                            if (method == 'update') {
+                                table.ajax.reload(null, false);
+                            } else {
+                                table.ajax.reload();
+                            }
+                            $('#myModal').modal('hide');
+                        }
                     }
 
                 },
@@ -205,8 +184,6 @@
                 }
             });
         }
-
-        });
 
         //toaster notification 
         function flashMessage(status, message) {
@@ -246,10 +223,75 @@
 
     //edit users data
     $(document).on('click', '.edit_data', function () {
-        alert('hi')
+        let id = $(this).data('id');
+        if (id) {
+            $.ajax({
+                    url: "{{route('user.edit')}}",
+                    type: "POST",
+                    data: {
+                        id: id,
+                        _token: _token
+                    },
+                    dataType: "JSON",
+                    success: function (data) {
+                        $('#password, #password_confirmation').parent().addClass('d-none'); 
+                        $('#storeForm #update_id').val(data.user.id);
+                        $('#storeForm #name').val(data.user.name);
+                        $('#storeForm #email').val(data.user.email);
+                        $('#storeForm #district_id').val(data.user.district_id);
+                        upazilaList(data.user.district_id, 'storeForm');
+                        setTimeout(() => {
+                            $('#storeForm #upazila_id').val(data.user.upazila_id);
+                        }, 1000);
+                        $('#storeForm #address').val(data.user.address);
+                        $('#storeForm #role_id').val(data.user.role_id);
+
+                        if (data.user.avatar) {
+                            let avatar = "{{asset('storage/user_image')}}/" + data.user.avatar;
+                            $('#storeForm .dropify-preview').css('display', 'block');
+                            $('#storeForm .dropify-render').html('<image src="' + avatar + '"/>');
+                            $('#storeForm #old_avatar').val(data.user.avatar);
+                        }else{
+                            let avatar = "{{asset('svg/user.svg')}}" ;
+                            $('#storeForm .dropify-preview').css('display', 'block');
+                            $('#storeForm .dropify-render').html('<image src="' + avatar + '"/>');
+                        }
+                        
+                        $("#myModal").modal('show');
+                        $('#myModal .modal-title').html(
+                            '<i class="fas fa-edit"></i> <span>Edit ' + data.user.name + '</span>');
+                        $('#myModal #saveBtn').text('update');
+                    },
+                    error: function (xhr, ajaxOption, thrownError) {
+                        console.log(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+                    }
+                });
+        }
     });
 
-    });
+
+    //get upazila by dependenci select box
+    function upazilaList(district_id, form) {
+        if (district_id) {
+            $.ajax({
+                url: "{{route('upazila.list')}}",
+                type: "POST",
+                data: {
+                    district_id: district_id,
+                    _token: _token
+                },
+                dataType: "JSON",
+                success: function (data) {
+                    $('#upazila_id').html('');
+                    $('#upazila_id').html(data);
+                },
+                error: function (xhr, ajaxOption, thrownError) {
+                    console.log(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+                }
+            });
+        }
+
+    }
 
 </script>
 @endpush

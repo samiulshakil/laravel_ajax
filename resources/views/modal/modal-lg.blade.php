@@ -22,7 +22,7 @@
                             <x-textbox type="password" labelName="Confirm Password" name="password_confirmation" required="required" col="col-md-12" placeholder="Enter password again"/>
                             <div class="form-group col-md-12">
                                 <label for="district_id" class="card-title">Select District</label>
-                                <select class="form-control col-md-12" id="district_id" name="district_id" required="required">
+                                <select onchange="upazilaList(this.value,'storeForm')" class="form-control col-md-12" id="district_id" name="district_id" required="required">
                                     <option value="">Select Please</option>
                                     @foreach ($districts as $district)
                                         <option value="{{$district->id}}">{{$district->location_name}}</option>

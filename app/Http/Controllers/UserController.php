@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserFormRequest;
+use App\Http\Requests\UserUpdateFormRequest;
 use App\Models\User;
 use App\Traits\Uploadable;
 use Illuminate\Http\Request;
@@ -13,26 +14,26 @@ class UserController extends Controller
 
     public function store(UserFormRequest $request)
     {
-        $result = User::Create([
-            'role_id' => $request->role_id,
-            'name' => $request->name,
-            'email' => $request->email,
-            'district_id' => $request->district_id,
-            'upazila_id' => $request->upazila_id,
-            'password' => $request->password,
-            'address' => $request->address,
-            'status' => 0,
-        ]);
+        $data = $request->validated();
+        $collection = collect($data)->except(['avatar', 'password_confirmation']);
 
-        if($request->hasFile('avatar')){
+        if ($request->file('avatar')) {
             $avatar = $this->upload_file($request->file('avatar'), 'user_image');
-            $result->avatar = $avatar;
-            $result->save();
+            $collection = $collection->merge(compact('avatar'));
+            if (!empty($request->old_avatar)) {
+                $this->delete_file($request->old_avatar, 'user_image');
+            }
         }
+
+        $result = User::updateOrCreate(['id' => $request->update_id], $collection->all());
 
         if ($result) {
             $output = ['status' => 'success', 'message' => 'Data has been saved successfully'];
         } else {
+            if (!empty($avatar)) {
+                $this->delete_file($avatar, 'user_image');
+            }
+
             $output = ['status' => 'error', 'message' => 'Data cannot save'];
         }
         return response()->json($output);
@@ -54,9 +55,9 @@ class UserController extends Controller
             foreach ($list as $value) {
                 $no++;
                 $action = '';
-                $action .= ' <a class="dropdown-item edit_data" data-id="' . $value->id . '"><i class="fas fa-edit text-primary"></i> Edit</a>';
-                $action .= ' <a class="dropdown-item view_data"  data-id="' . $value->id . '"><i class="fas fa-eye text-warning"></i> View</a>';
-                $action .= ' <a class="dropdown-item delete_data"  data-id="' . $value->id . '" data-name="' . $value->name . '"><i class="fas fa-trash text-danger"></i> Delete</a>';
+                $action .= ' <a class="dropdown-item edit_data" role="button" data-id="' . $value->id . '"><i class="fas fa-edit text-primary"></i> Edit</a>';
+                $action .= ' <a class="dropdown-item view_data" role="button"  data-id="' . $value->id . '"><i class="fas fa-eye text-warning"></i> View</a>';
+                $action .= ' <a class="dropdown-item delete_data" role="button"  data-id="' . $value->id . '" data-name="' . $value->name . '"><i class="fas fa-trash text-danger"></i> Delete</a>';
 
                 $btngroup = '<div class="dropdown">
                 <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -99,6 +100,18 @@ class UserController extends Controller
     private function avatar($avatar = null, $name = null,)
     {
         return !empty($avatar) ? '<img src="' . asset("storage/" . 'user_image/' . $avatar) . '" alt="' . $name . '" style="width:60px;"/>' : '<img style="width:60px;" src="' . asset("svg/user.svg") . '" alt="User Avatar"/>';
+    }
+
+    public function userEdit(Request $request){
+        if ($request->ajax()) {
+            $data = User::toBase()->find($request->id);
+            if ($data) {
+                $output['user'] = $data;
+            } else {
+                $output['user'] = '';
+            }
+            return response()->json($output);
+        }
     }
 
 }

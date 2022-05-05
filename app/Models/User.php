@@ -14,7 +14,13 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     public const VALIDATION_RULES = [
-
+        'role_id' => ['required', 'integer'],
+        'name' => ['required', 'string'],
+        'email' => ['required', 'email', 'unique:users,email'],
+        'avatar' => ['nullable', 'image', 'mimes:jpg,jpeg,png,svg,webp'],
+        'district_id' => ['required', 'integer'],
+        'upazila_id' => ['required', 'integer'],
+        'address' => ['required', 'string'],
     ];
 
     /**
