@@ -3,6 +3,7 @@
 <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/css/dropify.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.10/dist/sweetalert2.min.css">
 <style>
     .dropify-wrapper .dropify-message p {
         font-size: initial;
@@ -82,12 +83,14 @@
     </div>
 </div>
 @include('modal.modal-lg')
+@include('modal.view-modal')
 @endsection
 @push('js')
 <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/js/dropify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.10/dist/sweetalert2.min.js"></script>
 <script>
     let table;
     $(document).ready( function () {
@@ -268,6 +271,75 @@
                 });
         }
     });
+
+    //view data
+    $(document).on('click', '.view_data', function () {
+        let id = $(this).data('id');
+        if (id) {
+            $.ajax({
+                url: "{{route('user.show')}}", 
+                type: "POST",
+                data: {
+                    id: id,
+                    _token: _token
+                },
+                dataType: "JSON",
+                success: function (data) {
+                    $('#view_data').html('');
+                    $('#view_data').html(data.user_view);
+                    $("#viewDataModal").modal('show');
+                    $('#viewDataModal .modal-title').html('<i class="fas fa-eye"></i> <span> ' +
+                        data.name + ' Details</span>');
+
+                },
+                error: function (xhr, ajaxOption, thrownError) {
+                    console.log(thrownError + '\r\n' + xhr.statusText + '\r\n' + xhr.responseText);
+                }
+            });
+        }
+    });
+
+    //delete user data
+
+    $(document).on('click', '.delete_data', function () {
+        let id = $(this).data('id');
+        let name = $(this).data('name');
+        let row = table.row($(this).parent('tr'));
+        let url = "{{ route('user.destroy') }}";
+        delete_data(id, url, table, row, name);
+    });
+
+    function delete_data(id, url, table, row, name) {
+        Swal.fire({
+            title: 'Are you sure to delete ' + name + ' data?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        id: id,
+                        _token: _token
+                    },
+                    dataType: "JSON",
+                }).done(function (response) {
+                    if (response.status == "success") {
+                        Swal.fire("Deleted", response.message, "success").then(function () {
+                            table.row(row).remove().draw(false);
+                        });
+                    }
+                }).fail(function () {
+                    swal.fire('Oops...', "Somthing went wrong with ajax!", "error");
+                });
+            }
+        });
+    }
 
 
     //get upazila by dependenci select box

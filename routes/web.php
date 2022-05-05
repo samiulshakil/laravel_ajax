@@ -31,7 +31,9 @@ Route::prefix('user')->group(function () {
     Route::name('user.')->group(function () {
         Route::post('store', [UserController::class, 'store'])->name('store');
         Route::post('list', [UserController::class, 'userList'])->name('list');
-        Route::post('edit', [UserController::class, 'userEdit'])->name('edit');
+        Route::post('edit', [UserController::class, 'edit'])->name('edit');
+        Route::post('show', [UserController::class, 'show'])->name('show');
+        Route::post('destroy', [UserController::class, 'destroy'])->name('destroy');
     });
 });
 

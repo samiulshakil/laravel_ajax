@@ -102,13 +102,51 @@ class UserController extends Controller
         return !empty($avatar) ? '<img src="' . asset("storage/" . 'user_image/' . $avatar) . '" alt="' . $name . '" style="width:60px;"/>' : '<img style="width:60px;" src="' . asset("svg/user.svg") . '" alt="User Avatar"/>';
     }
 
-    public function userEdit(Request $request){
+    public function edit(Request $request){
         if ($request->ajax()) {
             $data = User::toBase()->find($request->id);
             if ($data) {
                 $output['user'] = $data;
             } else {
                 $output['user'] = '';
+            }
+            return response()->json($output);
+        }
+    }
+
+
+    public function show(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = User::with(['role:id,role_name', 'district:id,location_name',
+                'upazila:id,location_name'])->find($request->id);
+            if ($data) {
+                $output['user_view'] = view('user_details', compact('data'))->render();
+                $output['name'] = $data->name;
+            } else {
+                $output['user_view'] = '';
+                $output['name'] = '';
+            }
+            return response()->json($output);
+        }
+    }
+
+    public function destroy(Request $request)
+    {
+        if ($request->ajax()) {
+            $data = User::find($request->id);
+            if ($data) {
+                $avatar = $data->avatar;
+                if ($data->delete()) {
+                    if (!empty($avatar)) {
+                        $this->delete_file($avatar, 'user_image');
+                    }
+                    $output = ['status' => 'success', 'message' => 'Data deleted successfully'];
+                } else {
+                    $output = ['status' => 'error', 'message' => 'Data cannot delete!'];
+                }
+            } else {
+                $output = ['status' => 'error', 'message' => 'Data cannot delete!'];
             }
             return response()->json($output);
         }
