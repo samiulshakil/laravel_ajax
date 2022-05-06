@@ -43,6 +43,26 @@ class UserController extends Controller
         if ($request->ajax()) {
             $user =  new User();
 
+            
+            if (!empty($request->name)) {
+                $user->setName($request->name);
+            }
+            if (!empty($request->email)) {
+                $user->setEmail($request->email);
+            }
+            if (!empty($request->role_id)) {
+                $user->setRoleID($request->role_id);
+            }
+            if (!empty($request->district_id)) {
+                $user->setDistrictID($request->district_id);
+            }
+            if (!empty($request->upazila_id)) {
+                $user->setUpazilaID($request->upazila_id);
+            }
+            if (!empty($request->status)) {
+                $user->setStatus($request->status);
+            }
+
             $user->setOrderValue($request->input('order.0.column'));
             $user->setDirValue($request->input('order.0.dir'));
             $user->setLengthValue($request->input('length'));
@@ -51,7 +71,7 @@ class UserController extends Controller
             $list = $user->getList();
 
             $data = [];
-            $no = $request->input('start');
+            $no = $request->input('start');  
             foreach ($list as $value) {
                 $no++;
                 $action = '';
@@ -82,7 +102,7 @@ class UserController extends Controller
                 $row[] = $value->district->location_name;
                 $row[] = $value->upazila->location_name;
                 $row[] = $value->email_verified_at ? '<span class="badge bg-success">Verified</span>' : '<span class="badge bg-danger">Unverified</span>';
-                $row[] = $value->status == 1 ?'<span class="badge bg-success">Active</span>' : '<span class="badge bg-danger">Inactive</span>';;
+                $row[] = $this->toggle_button($value->status, $value->id);
                 $row[] = $btngroup;
                 $data[] = $row;
             }
@@ -101,6 +121,32 @@ class UserController extends Controller
     {
         return !empty($avatar) ? '<img src="' . asset("storage/" . 'user_image/' . $avatar) . '" alt="' . $name . '" style="width:60px;"/>' : '<img style="width:60px;" src="' . asset("svg/user.svg") . '" alt="User Avatar"/>';
     }
+
+    private function toggle_button($status,$id){
+        $checked = $status == 1 ? 'checked' : '';
+        return    '<label class="switch">
+                    <input type="checkbox" '.$checked.' class="change_status" data-id="'.$id.'">
+                    <span class="slider round"></span>
+                    </label>';
+}
+
+public function changeStatus(Request $request)
+{
+    if ($request->ajax()) {
+        if ($request->id && $request->status) {
+            $result = User::find($request->id)->update(['status'=>$request->status]);
+            if ($result) {
+                $output = ['status' => 'success', 'message' => 'User status changed successfully'];
+            } else {
+                $output = ['status' => 'error', 'message' => 'User status cannot change'];
+            }
+        } else {
+            $output = ['status' => 'error', 'message' => 'User status cannot change'];
+        }
+        return response()->json($output);
+    }
+}
+
 
     public function edit(Request $request){
         if ($request->ajax()) {

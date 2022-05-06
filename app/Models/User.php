@@ -74,6 +74,38 @@ class User extends Authenticatable
     private $order = array('users.id' => 'desc');
     private $column_order;
 
+    private $name;
+    private $email;
+    private $role_id;
+    private $district_id;
+    private $upazila_id;
+    private $status;
+
+    public function setName($name)
+    {
+        $this->name = $name;
+    }
+    public function setEmail($email)
+    {
+        $this->email = $email;
+    }
+    public function setRoleID($role_id)
+    {
+        $this->role_id = $role_id;
+    }
+    public function setDistrictID($district_id)
+    {
+        $this->district_id = $district_id;
+    }
+    public function setUpazilaID($upazila_id)
+    {
+        $this->upazila_id = $upazila_id;
+    }
+    public function setStatus($status)
+    {
+        $this->status = $status;
+    }
+
     private $orderValue;
     private $dirValue;
     private $startValue;
@@ -98,10 +130,37 @@ class User extends Authenticatable
 
     private function get_datatable_query()
     {
+        $this->column_order = ['', 'users.id', '', 'users.name', 'users.role_id', 'users.email',
+        'users.district_id', 'users.upazila_id', 'users.email_verified_at', 'users.status', ''];
+
         $query = self::with(['role:id,role_name', 'district:id,location_name', 'upazila:id,location_name']);
-        if (isset($this->order)) {
-            $query->orderBy(key($this->order), $this->order[key($this->order)]);
-        }
+    
+
+        /* *Search Data **
+        ******************/
+       if (!empty($this->name)) {
+           $query->where('users.name', 'like', '%' . $this->name . '%');
+       }
+       if (!empty($this->email)) {
+           $query->where('users.email', 'like', '%' . $this->email . '%');
+       }
+       if (!empty($this->role_id)) {
+           $query->where('users.role_id', $this->role_id);
+       }
+       if (!empty($this->district_id)) {
+           $query->where('users.district_id', $this->district_id);
+       }
+       if (!empty($this->upazila_id)) {
+           $query->where('users.upazila_id', $this->upazila_id);
+       }
+       if (!empty($this->status)) {
+           $query->where('users.status', $this->status);
+       }
+       if (isset($this->orderValue) && isset($this->dirValue)) {
+           $query->orderBy($this->column_order[$this->orderValue], $this->dirValue);
+       } else if (isset($this->order)) {
+           $query->orderBy(key($this->order), $this->order[key($this->order)]);
+       }
         return $query;
     }
 

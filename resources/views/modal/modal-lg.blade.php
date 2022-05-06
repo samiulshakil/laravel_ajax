@@ -45,7 +45,6 @@
                                         <option value="{{$role->id}}">{{$role->role_name}}</option>
                                     @endforeach
                             </x-selectbox>
-
                         </div>
                     </div>
                 </div>
