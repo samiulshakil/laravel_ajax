@@ -35,6 +35,7 @@ Route::prefix('user')->group(function () {
         Route::post('show', [UserController::class, 'show'])->name('show');
         Route::post('destroy', [UserController::class, 'destroy'])->name('destroy');
         Route::post('change-status', [UserController::class, 'changeStatus'])->name('change.status');
+        Route::post('bulk-action-delete', [UserController::class, 'bulkActionDelete'])->name('bulk.action.delete');
     });
 });
 

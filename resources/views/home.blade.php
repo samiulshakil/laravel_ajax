@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @push('css')
-<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/jszip-2.5.0/dt-1.11.5/b-2.2.2/b-html5-2.2.2/b-print-2.2.2/r-2.2.9/datatables.min.css"/>
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.5/b-2.2.2/b-colvis-2.2.2/b-html5-2.2.2/b-print-2.2.2/datatables.min.css"/>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.css">
 <link href="https://cdnjs.cloudflare.com/ajax/libs/Dropify/0.2.2/css/dropify.min.css" rel="stylesheet" />
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.10/dist/sweetalert2.min.css">
@@ -189,7 +189,8 @@
 @include('modal.view-modal')
 @endsection
 @push('js')
-<script type="text/javascript" src="https://cdn.datatables.net/v/bs5/jszip-2.5.0/dt-1.11.5/b-2.2.2/b-html5-2.2.2/b-print-2.2.2/r-2.2.9/datatables.min.js"></script>
+
+<script type="text/javascript" src="https://cdn.datatables.net/v/dt/jszip-2.5.0/dt-1.11.5/b-2.2.2/b-colvis-2.2.2/b-html5-2.2.2/b-print-2.2.2/date-1.1.2/datatables.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/pdfmake.min.js"></script>
 <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.36/vfs_fonts.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/toastr.min.js"></script>
@@ -197,7 +198,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.4.10/dist/sweetalert2.min.js"></script>
 <script>
     let table;
-    $(document).ready( function () {
+$(document).ready( function () {
         $('.dropify').dropify();
 
     table = $('#dataTable').DataTable({
@@ -368,6 +369,9 @@
                 },
             ],         
         });
+
+        $('#dataTable_wrapper .dt-buttons').append('<button type="button" class="btn btn-danger" id="bulk_action_delete"> <i class="fas fa-trash"></i> Delete All</button>');
+
     });
 
     $('#btn-filter').click(function () {
@@ -588,6 +592,92 @@
                     if (response.status == "success") {
                         Swal.fire("Deleted", response.message, "success").then(function () {
                             table.row(row).remove().draw(false);
+                        });
+                    }
+                }).fail(function () {
+                    swal.fire('Oops...', "Somthing went wrong with ajax!", "error");
+                });
+            }
+        });
+    }
+
+    function delete_data(id, url, table, row, name) {
+        Swal.fire({
+            title: 'Are you sure to delete ' + name + ' data?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!'
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        id: id,
+                        _token: _token
+                    },
+                    dataType: "JSON",
+                }).done(function (response) {
+                    if (response.status == "success") {
+                        Swal.fire("Deleted", response.message, "success").then(function () {
+                            table.row(row).remove().draw(false);
+                        });
+                    }
+                }).fail(function () {
+                    swal.fire('Oops...', "Somthing went wrong with ajax!", "error");
+                });
+            }
+        });
+    }
+
+    $(document).on('click', '#bulk_action_delete', function () {
+        let id = [];
+        let rows;
+        $('.select_data:checked').each(function(){
+            id.push($(this).val());
+            rows = table.rows($('.select_data:checked').parents('tr'));
+        });
+        if(id.length == 0){
+            Swal.fire({
+                type:'error',
+                title:'Error',
+                text:'Please checked at least one row of table!',
+                icon: 'warning',
+            });
+        }else{
+            let url = "{{route('user.bulk.action.delete')}}";
+            bulk_action_delete(id,url,table,rows);
+        }
+    });
+
+    function bulk_action_delete(id,url,table,rows){
+        Swal.fire({
+            title: 'Are you sure to delete all checked data?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete all!'
+        }).then((result) => {
+            if (result.value) {
+                $.ajax({
+                    url: url,
+                    type: "POST",
+                    data: {
+                        id: id,
+                        _token: _token
+                    },
+                    dataType: "JSON",
+                }).done(function (response) {
+                    if (response.status == "success") {
+                        Swal.fire("Deleted", response.message, "success").then(function () {
+                            
+                            table.rows(rows).remove().draw(false);
+                            $('#select_all').prop('checked',false);
                         });
                     }
                 }).fail(function () {
